@@ -41,7 +41,8 @@ option(CMAKE_ENCODING_UTF8 "Use UTF-8 encoding internally." ON)
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
 
-# the source code is distributed into one main.cpp file, and other files that create modules
+# create a variable containing the source file without the main entry point
+# we'll use it (one day) to build a test program
 file(GLOB_RECURSE mainSourceFiles src/main/cpp/*)
 list(REMOVE_ITEM mainSourceFiles src/main/cpp/main.cpp)
 
@@ -90,7 +91,6 @@ target_link_libraries(${MAIN_EXECUTABLE_NAME} PRIVATE ${FLTK_LIBRARIES})
 ################################################################################
 find_package(Microsoft.GSL CONFIG REQUIRED)
 target_link_libraries(${MAIN_EXECUTABLE_NAME} PRIVATE Microsoft.GSL::GSL)
-
 
 ################################################################################
 # compiler configurations
