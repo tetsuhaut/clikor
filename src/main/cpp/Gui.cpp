@@ -13,14 +13,8 @@ module;
 #  pragma GCC diagnostic ignored "-Weffc++"
 #endif  // _MSC_VER
 
-#include <FL/Fl.H> // Fl::*
-#include <FL/FL_ask.H> // fl_alert
 #include <FL/Fl_Button.H>
 #include <FL/Fl_Double_Window.H>
-#include <FL/Fl_Menu_Bar.H>
-#include <FL/Fl_Native_File_Chooser.H>
-#include <FL/Fl_Text_Display.H>
-#include <FL/Fl_Tree.H>
 
 #if defined(_MSC_VER)  // end of specific msvc warnings removal
 #  pragma warning(pop)
@@ -28,6 +22,7 @@ module;
 #  pragma GCC diagnostic pop
 #endif  // _MSC_VER
 
+// as of 2023/08/20, gcc can't do 'import std'. See https://gcc.gnu.org/wiki/LibstdcxxTodo TODO: when it is possible, use it
 #include <memory>
 #include <string>
 #include <tuple>
@@ -42,10 +37,11 @@ private:
   Preferences m_preferences;
   std::unique_ptr<Fl_Double_Window> m_mainWindow;
 public:
+  MainWindow();
   void exit();
   [[nodiscard]] int run();
 };
-}
+} // namespace gui
 module : private;
 
 [[nodiscard]] gui::MainWindow* MAIN_WINDOW(void* self) {
@@ -70,11 +66,30 @@ void gui::MainWindow::exit() {
   while (Fl::first_window()) { Fl::first_window()->hide(); }
 }
 
+static constexpr int BUTTON_WIDTH { 100 };
+static constexpr int BUTTON_HEIGH { 30 };
+static constexpr int SPACE { 5 };
+
+//   0
+// 0 +---- x
+//   |
+//   |
+//   y
 [[nodiscard]] int gui::MainWindow::run() {
-  const auto [localX, localY, width, height] { m_preferences.getMainWindowXYWH() };
-  m_mainWindow = std::make_unique<Fl_Double_Window>(localX, localY, width, height, "Clikor");
+  const auto [localX, localY] { m_preferences.getMainWindowXY() };
+  m_mainWindow = std::make_unique<Fl_Double_Window>(localX, localY, 3 * BUTTON_WIDTH + 2 * SPACE, BUTTON_HEIGH, "Clikor");
   m_mainWindow->callback(mainWindowCb, this);
+  auto recordButton = std::make_unique<Fl_Button>(0, 0, BUTTON_WIDTH, BUTTON_HEIGH, "Record");
+  auto stopButton = std::make_unique<Fl_Button>(recordButton->x() + SPACE + BUTTON_WIDTH,
+                    recordButton->y(), BUTTON_WIDTH, BUTTON_HEIGH, "Stop");
+  auto playButton = std::make_unique<Fl_Button>(stopButton->x() + SPACE + BUTTON_WIDTH,
+                    recordButton->y(), BUTTON_WIDTH, BUTTON_HEIGH, "Play");
   m_mainWindow->end();
   m_mainWindow->show();
   return Fl::run();
+}
+
+gui::MainWindow::MainWindow()
+  : m_preferences(3 * BUTTON_WIDTH + 2 * SPACE, BUTTON_HEIGH) {
+  // nothing to do
 }

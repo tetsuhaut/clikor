@@ -21,36 +21,46 @@ module;
 #include <string_view>
 #include <tuple>
 
-
 export module gui.Preferences;
 
 /**
  * User preferences. This class encapsulates the FLTK user preference management.
  */
-export class [[nodiscard]] Preferences final {
-private:
-  std::unique_ptr<Fl_Preferences> m_preferences { std::make_unique<Fl_Preferences>(Fl_Preferences::USER,
-        APP_NAME, APP_NAME) }; // TODO : check that APP_NAME macro is defined at compilation
-public:
-  void saveWindowX(int x);
-  void saveWindowY(int y);
-  void saveWindowWidth(int width);
-  void saveWindowHeight(int height);
-  void saveHistoryDir(const std::filesystem::path& dir);
-  std::string getHandHistoryDir() const;
-  [[nodiscard]] std::tuple<int, int, int, int> getMainWindowXYWH() const;
-  void saveSizeAndPosition(const std::array<int, 4>& xywh);
-  Preferences() = default;
-  Preferences(const Preferences&) = delete;
-  ~Preferences() = default;
-  Preferences& operator=(const Preferences& t) = delete;
-}; // class Preferences
+export namespace gui {
+  class [[nodiscard]] Preferences final {
+  private:
+#ifndef APP_VENDOR
+#  error The macro APP_VENDOR should have been defined in CMakeLists.txt
+#endif // APP_VENDOR
+#ifndef APP_NAME
+#  error The macro APP_NAME should have been defined in CMakeLists.txt
+#endif // APP_NAME
+    std::unique_ptr<Fl_Preferences> m_preferences { std::make_unique<Fl_Preferences>(
+        Fl_Preferences::USER,
+        APP_VENDOR,
+        APP_NAME)
+    };
+    int m_defaultWidth;
+    int m_defaultHeight;
+  public:
+    void saveWindowX(int x);
+    void saveWindowY(int y);
+    void saveWindowWidth(int width);
+    void saveWindowHeight(int height);
+    void saveHistoryDir(const std::filesystem::path& dir);
+    std::string getHandHistoryDir() const;
+    [[nodiscard]] std::pair<int, int> getMainWindowXY() const;
+    void saveSizeAndPosition(const std::array<int, 4>& xywh);
+    Preferences(int defaultWidth, int defaultHeight);
+    Preferences(const Preferences&) = delete;
+    ~Preferences() = default;
+    Preferences& operator=(const Preferences& t) = delete;
+  }; // class Preferences
+} // namespace gui
 
 module : private;
 
 namespace detail {
-static constexpr int DEFAULT_WIDTH = 800;
-static constexpr int DEFAULT_HEIGHT = 600;
 static constexpr std::string_view MAIN_WINDOW_X = "mainwindowx";
 static constexpr std::string_view MAIN_WINDOW_Y = "mainwindowy";
 static constexpr std::string_view MAIN_WINDOW_WIDTH = "mainwindoww";
@@ -80,26 +90,23 @@ std::string getString(Fl_Preferences& fltkPreferences, std::string_view key) {
   return value;
 }
 
-[[nodiscard]] std::tuple<int, int, int, int> getGenericWindowXYWH(
+[[nodiscard]] std::pair<int, int> getGenericWindowXY(
   Fl_Preferences& fltkPreferences,
+  int width,
+  int height,
   std::string_view xname,
-  std::string_view yname,
-  std::string_view widthname,
-  std::string_view heightname) {
-  /* get the previous width and height from preferences, if any */
-  auto width { getIntWithMin(fltkPreferences, widthname, DEFAULT_WIDTH) };
-  auto height { getIntWithMin(fltkPreferences, heightname, DEFAULT_HEIGHT) };
+  std::string_view yname) {
   /* compute the center position */
   int dummyX, dummyY, screenWidth, screenHeight;
   Fl::screen_xywh(dummyX, dummyY, screenWidth, screenHeight);
   /* get the previous position from preferences. if none, use the center position */
   auto x { getIntWithDefault(fltkPreferences, xname, (screenWidth - width) / 2) };
   auto y { getIntWithDefault(fltkPreferences, yname, (screenHeight - height) / 2) };
-  return { x, y, width, height };
+  return { x, y };
 }
 } // namespace detail
 
-void Preferences::saveSizeAndPosition(const std::array<int, 4>& xywh) {
+void gui::Preferences::saveSizeAndPosition(const std::array<int, 4>& xywh) {
   const auto& [x, y, w, h] { xywh };
   saveWindowX(x);
   saveWindowY(y);
@@ -107,24 +114,28 @@ void Preferences::saveSizeAndPosition(const std::array<int, 4>& xywh) {
   saveWindowHeight(h);
 }
 
-void Preferences::saveWindowX(int x) {
+void gui::Preferences::saveWindowX(int x) {
   detail::save(*m_preferences, detail::MAIN_WINDOW_X, x);
 }
 
-void Preferences::saveWindowY(int y) {
+void gui::Preferences::saveWindowY(int y) {
   detail::save(*m_preferences, detail::MAIN_WINDOW_Y, y);
 }
 
-void Preferences::saveWindowWidth(int width) {
+void gui::Preferences::saveWindowWidth(int width) {
   detail::save(*m_preferences, detail::MAIN_WINDOW_WIDTH, width);
 }
 
-void Preferences::saveWindowHeight(int height) {
+void gui::Preferences::saveWindowHeight(int height) {
   detail::save(*m_preferences, detail::MAIN_WINDOW_HEIGHT, height);
 }
 
-[[nodiscard]] std::tuple<int, int, int, int> Preferences::getMainWindowXYWH() const {
-  return detail::getGenericWindowXYWH(*m_preferences, detail::MAIN_WINDOW_X, detail::MAIN_WINDOW_Y,
-                                      detail::MAIN_WINDOW_WIDTH,
-                                      detail::MAIN_WINDOW_HEIGHT);
+[[nodiscard]] std::pair<int, int> gui::Preferences::getMainWindowXY() const {
+  return detail::getGenericWindowXY(*m_preferences, m_defaultWidth, m_defaultHeight, detail::MAIN_WINDOW_X, detail::MAIN_WINDOW_Y);
+}
+
+gui::Preferences::Preferences(int defaultWidth, int defaultHeight)
+  : m_defaultWidth { defaultWidth },
+    m_defaultHeight { defaultHeight } {
+  // nothing to do
 }

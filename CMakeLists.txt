@@ -61,6 +61,7 @@ target_sources(${MAIN_EXECUTABLE_NAME}
 # pass informations to the source code
 target_compile_definitions(${MAIN_EXECUTABLE_NAME} PUBLIC APP_VERSION="${CMAKE_PROJECT_VERSION}")
 target_compile_definitions(${MAIN_EXECUTABLE_NAME} PUBLIC APP_NAME="${CMAKE_PROJECT_NAME}")
+target_compile_definitions(${MAIN_EXECUTABLE_NAME} PUBLIC APP_VENDOR="tetsuhaut")
 target_compile_definitions(${MAIN_EXECUTABLE_NAME} PUBLIC MAIN_EXECUTABLE_NAME="${MAIN_EXECUTABLE_NAME}")
 
 ################################################################################
