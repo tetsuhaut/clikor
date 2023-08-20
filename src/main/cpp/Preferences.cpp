@@ -27,35 +27,35 @@ export module gui.Preferences;
  * User preferences. This class encapsulates the FLTK user preference management.
  */
 export namespace gui {
-  class [[nodiscard]] Preferences final {
-  private:
+class [[nodiscard]] Preferences final {
+private:
 #ifndef APP_VENDOR
 #  error The macro APP_VENDOR should have been defined in CMakeLists.txt
 #endif // APP_VENDOR
 #ifndef APP_NAME
 #  error The macro APP_NAME should have been defined in CMakeLists.txt
 #endif // APP_NAME
-    std::unique_ptr<Fl_Preferences> m_preferences { std::make_unique<Fl_Preferences>(
-        Fl_Preferences::USER,
-        APP_VENDOR,
-        APP_NAME)
-    };
-    int m_defaultWidth;
-    int m_defaultHeight;
-  public:
-    void saveWindowX(int x);
-    void saveWindowY(int y);
-    void saveWindowWidth(int width);
-    void saveWindowHeight(int height);
-    void saveHistoryDir(const std::filesystem::path& dir);
-    std::string getHandHistoryDir() const;
-    [[nodiscard]] std::pair<int, int> getMainWindowXY() const;
-    void saveSizeAndPosition(const std::array<int, 4>& xywh);
-    Preferences(int defaultWidth, int defaultHeight);
-    Preferences(const Preferences&) = delete;
-    ~Preferences() = default;
-    Preferences& operator=(const Preferences& t) = delete;
-  }; // class Preferences
+  std::unique_ptr<Fl_Preferences> m_preferences { std::make_unique<Fl_Preferences>(
+      Fl_Preferences::USER,
+      APP_VENDOR,
+      APP_NAME)
+  };
+  int m_defaultWidth;
+  int m_defaultHeight;
+public:
+  void saveWindowX(int x);
+  void saveWindowY(int y);
+  void saveWindowWidth(int width);
+  void saveWindowHeight(int height);
+  void saveHistoryDir(const std::filesystem::path& dir);
+  std::string getHandHistoryDir() const;
+  [[nodiscard]] std::pair<int, int> getMainWindowXY() const;
+  void saveSizeAndPosition(const std::array<int, 4>& xywh);
+  Preferences(int defaultWidth, int defaultHeight);
+  Preferences(const Preferences&) = delete;
+  ~Preferences() = default;
+  Preferences& operator=(const Preferences& t) = delete;
+}; // class Preferences
 } // namespace gui
 
 module : private;

@@ -13,6 +13,7 @@ module;
 #  pragma GCC diagnostic ignored "-Weffc++"
 #endif  // _MSC_VER
 
+#include <FL/Fl.H> // Fl::event()
 #include <FL/Fl_Button.H>
 #include <FL/Fl_Double_Window.H>
 
@@ -77,7 +78,8 @@ static constexpr int SPACE { 5 };
 //   y
 [[nodiscard]] int gui::MainWindow::run() {
   const auto [localX, localY] { m_preferences.getMainWindowXY() };
-  m_mainWindow = std::make_unique<Fl_Double_Window>(localX, localY, 3 * BUTTON_WIDTH + 2 * SPACE, BUTTON_HEIGH, "Clikor");
+  m_mainWindow = std::make_unique<Fl_Double_Window>(localX, localY, 3 * BUTTON_WIDTH + 2 * SPACE,
+                 BUTTON_HEIGH, "Clikor");
   m_mainWindow->callback(mainWindowCb, this);
   auto recordButton = std::make_unique<Fl_Button>(0, 0, BUTTON_WIDTH, BUTTON_HEIGH, "Record");
   auto stopButton = std::make_unique<Fl_Button>(recordButton->x() + SPACE + BUTTON_WIDTH,
