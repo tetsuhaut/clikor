@@ -61,13 +61,14 @@ export namespace gui {
 module : private;
 
 namespace detail {
-static constexpr std::string_view MAIN_WINDOW_X = "mainwindowx";
-static constexpr std::string_view MAIN_WINDOW_Y = "mainwindowy";
+static constexpr std::string_view MAIN_WINDOW_X_NAME = "mainwindowx";
+static constexpr std::string_view MAIN_WINDOW_Y_NAME = "mainwindowy";
 static constexpr std::string_view MAIN_WINDOW_WIDTH = "mainwindoww";
 static constexpr std::string_view MAIN_WINDOW_HEIGHT = "mainwindowh";
+static constexpr int FL_ERROR = 0; // comes from FLTK documentation
 
 void save(Fl_Preferences& fltkPreferences, std::string_view key, auto&& value) {
-  if (0 == fltkPreferences.set(key.data(), std::forward<decltype(value)>(value))) {
+  if (FL_ERROR == fltkPreferences.set(key.data(), std::forward<decltype(value)>(value))) {
     fl_alert(std::format("Couldn't save '{}' into the preferences repository.", key).c_str());
   }
 }
@@ -90,20 +91,6 @@ std::string getString(Fl_Preferences& fltkPreferences, std::string_view key) {
   return value;
 }
 
-[[nodiscard]] std::pair<int, int> getGenericWindowXY(
-  Fl_Preferences& fltkPreferences,
-  int width,
-  int height,
-  std::string_view xname,
-  std::string_view yname) {
-  /* compute the center position */
-  int dummyX, dummyY, screenWidth, screenHeight;
-  Fl::screen_xywh(dummyX, dummyY, screenWidth, screenHeight);
-  /* get the previous position from preferences. if none, use the center position */
-  auto x { getIntWithDefault(fltkPreferences, xname, (screenWidth - width) / 2) };
-  auto y { getIntWithDefault(fltkPreferences, yname, (screenHeight - height) / 2) };
-  return { x, y };
-}
 } // namespace detail
 
 void gui::Preferences::saveSizeAndPosition(const std::array<int, 4>& xywh) {
@@ -115,11 +102,11 @@ void gui::Preferences::saveSizeAndPosition(const std::array<int, 4>& xywh) {
 }
 
 void gui::Preferences::saveWindowX(int x) {
-  detail::save(*m_preferences, detail::MAIN_WINDOW_X, x);
+  detail::save(*m_preferences, detail::MAIN_WINDOW_X_NAME, x);
 }
 
 void gui::Preferences::saveWindowY(int y) {
-  detail::save(*m_preferences, detail::MAIN_WINDOW_Y, y);
+  detail::save(*m_preferences, detail::MAIN_WINDOW_Y_NAME, y);
 }
 
 void gui::Preferences::saveWindowWidth(int width) {
@@ -131,7 +118,13 @@ void gui::Preferences::saveWindowHeight(int height) {
 }
 
 [[nodiscard]] std::pair<int, int> gui::Preferences::getMainWindowXY() const {
-  return detail::getGenericWindowXY(*m_preferences, m_defaultWidth, m_defaultHeight, detail::MAIN_WINDOW_X, detail::MAIN_WINDOW_Y);
+  /* compute the center position */
+  int dummyX, dummyY, screenWidth, screenHeight;
+  Fl::screen_xywh(dummyX, dummyY, screenWidth, screenHeight);
+  /* get the previous position from preferences. if none, use the center position */
+  auto x { detail::getIntWithDefault(*m_preferences, detail::MAIN_WINDOW_X_NAME, (screenWidth - m_defaultWidth) / 2) };
+  auto y { detail::getIntWithDefault(*m_preferences, detail::MAIN_WINDOW_Y_NAME, (screenHeight - m_defaultHeight) / 2) };
+  return { x, y };
 }
 
 gui::Preferences::Preferences(int defaultWidth, int defaultHeight)
