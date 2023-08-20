@@ -63,8 +63,8 @@ module : private;
 namespace detail {
 static constexpr std::string_view MAIN_WINDOW_X_NAME = "mainwindowx";
 static constexpr std::string_view MAIN_WINDOW_Y_NAME = "mainwindowy";
-static constexpr std::string_view MAIN_WINDOW_WIDTH = "mainwindoww";
-static constexpr std::string_view MAIN_WINDOW_HEIGHT = "mainwindowh";
+static constexpr std::string_view MAIN_WINDOW_WIDTH_NAME = "mainwindoww";
+static constexpr std::string_view MAIN_WINDOW_HEIGHT_NAME = "mainwindowh";
 static constexpr int FL_ERROR = 0; // comes from FLTK documentation
 
 void save(Fl_Preferences& fltkPreferences, std::string_view key, auto&& value) {
@@ -110,11 +110,11 @@ void gui::Preferences::saveWindowY(int y) {
 }
 
 void gui::Preferences::saveWindowWidth(int width) {
-  detail::save(*m_preferences, detail::MAIN_WINDOW_WIDTH, width);
+  detail::save(*m_preferences, detail::MAIN_WINDOW_WIDTH_NAME, width);
 }
 
 void gui::Preferences::saveWindowHeight(int height) {
-  detail::save(*m_preferences, detail::MAIN_WINDOW_HEIGHT, height);
+  detail::save(*m_preferences, detail::MAIN_WINDOW_HEIGHT_NAME, height);
 }
 
 [[nodiscard]] std::pair<int, int> gui::Preferences::getMainWindowXY() const {
