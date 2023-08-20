@@ -10,11 +10,11 @@ SET CMAKE_GENERATOR="Visual Studio 17 2022" -A x64 -T host=x64
 SET BUILD_DIR=build
 
 REM Asserts the dependencies are present. We find them through environment variables.
-REM the *_DIR environment variables are hints to help CMake finding the
+REM Those *_DIR environment variables are hints to help CMake finding the
 REM libraries and include dirs.
 REM Due to *.bat limitations, must use one letter for the loop variable
 SETLOCAL enabledelayedexpansion
-FOR %%i IN (FLTK_DIR Microsoft.GSL_DIR SCRIPTS_DIR) DO (
+FOR %%i IN (FLTK_DIR Microsoft.GSL_DIR input_lite_DIR SCRIPTS_DIR) DO (
   IF NOT DEFINED %%i ECHO need to set the %%i environment variable && EXIT /B 1
   FOR /F %%j IN ('ECHO %%i') DO (
     IF NOT EXIST !%%j!\NUL ECHO %%i refers to a non existing directory '!%%j!' && EXIT /B 1

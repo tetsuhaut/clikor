@@ -49,11 +49,21 @@ module : private;
   return static_cast<gui::MainWindow*>(self);
 }
 
-void mainWindowCb(Fl_Widget*, void* mainWindow) {
+static void mainWindowCb(Fl_Widget*, void* mainWindow) {
   // we dont't want the Esc key to close the program
   if (FL_SHORTCUT == Fl::event() && FL_Escape == Fl::event_key()) { return; }
 
   MAIN_WINDOW(mainWindow)->exit();
+}
+
+static void recordButtonCb(Fl_Widget*, void* mainWindow) {
+  // starts listening to clicks
+}
+
+static void stopButtonCb(Fl_Widget*, void* mainWindow) {
+}
+
+static void playButtonCb(Fl_Widget*, void* mainWindow) {
 }
 
 void gui::MainWindow::exit() {
@@ -82,10 +92,15 @@ static constexpr int SPACE { 5 };
                  BUTTON_HEIGH, "Clikor");
   m_mainWindow->callback(mainWindowCb, this);
   auto recordButton = std::make_unique<Fl_Button>(0, 0, BUTTON_WIDTH, BUTTON_HEIGH, "Record");
+  recordButton->callback(recordButtonCb, this);
   auto stopButton = std::make_unique<Fl_Button>(recordButton->x() + SPACE + BUTTON_WIDTH,
                     recordButton->y(), BUTTON_WIDTH, BUTTON_HEIGH, "Stop");
+  stopButton->callback(stopButtonCb, this);
+  stopButton->deactivate();
   auto playButton = std::make_unique<Fl_Button>(stopButton->x() + SPACE + BUTTON_WIDTH,
                     recordButton->y(), BUTTON_WIDTH, BUTTON_HEIGH, "Play");
+  playButton->callback(playButtonCb, this);
+  playButton->deactivate();
   m_mainWindow->end();
   m_mainWindow->show();
   return Fl::run();

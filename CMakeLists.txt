@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.26)
 
 # general informations
-project("Clikor"
+project("clikor"
         VERSION 0.0.1.20230819
-        DESCRIPTION "Clicks for you"
+        DESCRIPTION "clicks for you"
         HOMEPAGE_URL https://github.com/tetsuhaut/clikor
         LANGUAGES CXX)
 
@@ -46,23 +46,22 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
 file(GLOB_RECURSE mainSourceFiles src/main/cpp/*)
 list(REMOVE_ITEM mainSourceFiles src/main/cpp/main.cpp)
 
-# the source code creates an executable file called 'clikor'
-set(MAIN_EXECUTABLE_NAME "clikor")
-add_executable(${MAIN_EXECUTABLE_NAME})
+# the source code creates an executable file named after the project name
+add_executable(${PROJECT_NAME})
 
 # the executable file is created from main.cpp and modules
-target_sources(${MAIN_EXECUTABLE_NAME} PUBLIC src/main/cpp/main.cpp)
-target_sources(${MAIN_EXECUTABLE_NAME}
+target_sources(${PROJECT_NAME} PUBLIC src/main/cpp/main.cpp)
+target_sources(${PROJECT_NAME}
   PUBLIC
   FILE_SET all_my_modules TYPE CXX_MODULES FILES
   ${mainSourceFiles}
 )
 
-# pass informations to the source code
-target_compile_definitions(${MAIN_EXECUTABLE_NAME} PUBLIC APP_VERSION="${CMAKE_PROJECT_VERSION}")
-target_compile_definitions(${MAIN_EXECUTABLE_NAME} PUBLIC APP_NAME="${CMAKE_PROJECT_NAME}")
-target_compile_definitions(${MAIN_EXECUTABLE_NAME} PUBLIC APP_VENDOR="tetsuhaut")
-target_compile_definitions(${MAIN_EXECUTABLE_NAME} PUBLIC MAIN_EXECUTABLE_NAME="${MAIN_EXECUTABLE_NAME}")
+# pass build informations to the source code
+target_compile_definitions(${PROJECT_NAME} PUBLIC APP_VERSION="${CMAKE_PROJECT_VERSION}")
+target_compile_definitions(${PROJECT_NAME} PUBLIC APP_NAME="${CMAKE_PROJECT_NAME}")
+target_compile_definitions(${PROJECT_NAME} PUBLIC APP_VENDOR="tetsuhaut")
+target_compile_definitions(${PROJECT_NAME} PUBLIC MAIN_EXECUTABLE_NAME="${PROJECT_NAME}")
 
 ################################################################################
 # library configurations
@@ -81,8 +80,8 @@ set(FLTK_SKIP_FLUID true)
 set(FLTK_SKIP_IMAGES true)
 set(FLTK_SKIP_OPENGL true)
 find_package(FLTK REQUIRED) # dunno how to provide version
-target_include_directories(${MAIN_EXECUTABLE_NAME} PRIVATE ${FLTK_INCLUDE_DIRS})
-target_link_libraries(${MAIN_EXECUTABLE_NAME} PRIVATE ${FLTK_LIBRARIES})
+target_include_directories(${PROJECT_NAME} PRIVATE ${FLTK_INCLUDE_DIRS})
+target_link_libraries(${PROJECT_NAME} PRIVATE ${FLTK_LIBRARIES})
 
 ################################################################################
 # will use the GSL library https://github.com/Microsoft/GSL, so configure the
@@ -91,7 +90,17 @@ target_link_libraries(${MAIN_EXECUTABLE_NAME} PRIVATE ${FLTK_LIBRARIES})
 # where the library has been installed
 ################################################################################
 find_package(Microsoft.GSL CONFIG REQUIRED)
-target_link_libraries(${MAIN_EXECUTABLE_NAME} PRIVATE Microsoft.GSL::GSL)
+target_link_libraries(${PROJECT_NAME} PRIVATE Microsoft.GSL::GSL)
+
+################################################################################
+# will use the input_lite library https://github.com/smasherprog/input_lite, so
+# configure the project for it.
+# need to have input_lite_DIR as an environment variable pointing to the dir
+# where the library has been installed
+################################################################################
+find_library(INPUT_LITE_LIBRARY NAMES input_lite HINTS "$ENV{input_lite_DIR}/lib")
+target_include_directories(${PROJECT_NAME} PRIVATE "$ENV{input_lite_DIR}/include")
+target_link_libraries(${PROJECT_NAME} PRIVATE ${INPUT_LITE_LIBRARY})
 
 ################################################################################
 # compiler configurations
@@ -105,9 +114,9 @@ target_link_libraries(${MAIN_EXECUTABLE_NAME} PRIVATE Microsoft.GSL::GSL)
 ################################################################################
 if(MSVC)
   # link statically
-  set_property(TARGET ${MAIN_EXECUTABLE_NAME} PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-  # select the ${MAIN_EXECUTABLE_NAME} project when opening Visual Studio
-  set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT ${MAIN_EXECUTABLE_NAME})
+  set_property(TARGET ${PROJECT_NAME} PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+  # select the ${PROJECT_NAME} project when opening Visual Studio
+  set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})
   
   # use utf-8 without byte order mark, compile with multiple threads
   # note : /INCREMENTAL is is implied for debug build
@@ -115,7 +124,7 @@ if(MSVC)
   #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /utf-8 /MP /ZI /Gy /EHsc /Zc:__cplusplus /fsanitize=leak" CACHE STRING "" FORCE)
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /ignore:4099" CACHE STRING "" FORCE)
   # compile in pure c++, with max possible warning level
-  target_compile_options(${MAIN_EXECUTABLE_NAME} PRIVATE
+  target_compile_options(${PROJECT_NAME} PRIVATE
                                                  /JMC # debug just mt code
                                                  /utf-8 # Set source and execution character sets to UTF-8.
                                                  /MP # Builds multiple source files concurrently.
@@ -145,7 +154,7 @@ elseif(MINGW)
    # -Werror=conversion breaks compilation because of Boost
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++2a -Wall -Wextra -Wpedantic -Werror=unused-function -pedantic-errors -Wvla -Wextra-semi -Wnull-dereference -Wswitch-enum -Wno-deprecated -fno-elide-type -Wduplicated-cond -Wduplicated-branches -Wsuggest-override -Wshadow -Wnon-virtual-dtor -Wold-style-cast -Wcast-align -Wunused -Woverloaded-virtual -pedantic -Wconversion -Wsign-conversion -Wmisleading-indentation -Wduplicated-cond -Wduplicated-branches -Wlogical-op -Wnull-dereference -Wuseless-cast -Wdouble-promotion -Wformat=2 -Weffc++")
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static")
-  target_link_libraries(${MAIN_EXECUTABLE_NAME} PRIVATE "-lpsapi -pthread")
-  #target_link_libraries(${MAIN_EXECUTABLE_NAME} PRIVATE -mwindows)
+  target_link_libraries(${PROJECT_NAME} PRIVATE "-lpsapi -pthread")
+  #target_link_libraries(${PROJECT_NAME} PRIVATE -mwindows)
   add_definitions(-DWIN32)
 endif(MSVC)
