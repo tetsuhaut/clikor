@@ -16,6 +16,7 @@ module;
 #include <FL/Fl.H> // Fl::event()
 #include <FL/Fl_Button.H>
 #include <FL/Fl_Double_Window.H>
+#include <Input_Lite.h>
 
 #if defined(_MSC_VER)  // end of specific msvc warnings removal
 #  pragma warning(pop)
@@ -24,18 +25,22 @@ module;
 #endif  // _MSC_VER
 
 // as of 2023/08/20, gcc can't do 'import std'. See https://gcc.gnu.org/wiki/LibstdcxxTodo TODO: when it is possible, use it
+#include <cassert>
+#include <format>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <tuple>
 
 export module gui.MainWindow;
 
 import gui.Preferences;
+import system;
 
 export namespace gui {
 class [[nodiscard]] MainWindow final {
 private:
-  Preferences m_preferences;
+  Preferences m_preferences; 
   std::unique_ptr<Fl_Double_Window> m_mainWindow;
 public:
   MainWindow();
@@ -43,7 +48,12 @@ public:
   [[nodiscard]] int run();
 };
 } // namespace gui
+
 module : private;
+
+static constexpr auto STOP_BUTTON_LABEL = "Stop";
+static constexpr auto PLAY_BUTTON_LABEL = "Play";
+static constexpr auto RECORD_BUTTON_LABEL = "Record";
 
 [[nodiscard]] gui::MainWindow* MAIN_WINDOW(void* self) {
   return static_cast<gui::MainWindow*>(self);
@@ -56,14 +66,51 @@ static void mainWindowCb(Fl_Widget*, void* mainWindow) {
   MAIN_WINDOW(mainWindow)->exit();
 }
 
-static void recordButtonCb(Fl_Widget*, void* mainWindow) {
+/**
+ * @param event, can be XEvent on Linux, MSG on Windows, or NSEvent on OSX
+ * @eturn non zero if the event was processed, else zero
+ */
+int systemMouseEventsListener(void* event, void* mainWindow) {
+  const auto& systemEvent { *static_cast<MSG*>(event) };
+
+  if ((WM_LBUTTONDOWN == systemEvent.message) or (WM_RBUTTONDOWN == systemEvent.message)) {
+    systemEvent.pt.x;
+    systemEvent.pt.y;
+    return 1;
+  }
+
+  return 0;
+}
+
+Fl_Widget* getButton(Fl_Widget* button, std::string_view label) {
+  auto* pGroup { button->parent() };
+  const auto nbChildren { pGroup->children() };
+
+  for (auto i = 0; i < nbChildren; ++i) {
+    if (label == pGroup->child(i)->label()) {
+      return pGroup->child(i);
+    }
+  }
+  auto errMsg { std::format("couldn't find the '{}' button", label) };
+  assert(false && errMsg.c_str());
+}
+
+static void recordButtonCb(Fl_Widget* recordButton, void* mainWindow) {
   // starts listening to clicks
+  //os::MouseEventListener::Instance().startListening();
+  recordButton->deactivate();
+  getButton(recordButton, STOP_BUTTON_LABEL)->activate();
 }
 
-static void stopButtonCb(Fl_Widget*, void* mainWindow) {
+static void stopButtonCb(Fl_Widget* stopButton, void* mainWindow) {
+  //os::MouseEventListener::Instance().stopListening();
+  getButton(stopButton, RECORD_BUTTON_LABEL)->activate();
+  getButton(stopButton, PLAY_BUTTON_LABEL)->activate();
 }
 
-static void playButtonCb(Fl_Widget*, void* mainWindow) {
+static void playButtonCb(Fl_Widget* playButton, void* mainWindow) {
+  //SL::Input_Lite::
+  getButton(playButton, RECORD_BUTTON_LABEL)->deactivate();
 }
 
 void gui::MainWindow::exit() {
@@ -91,14 +138,14 @@ static constexpr int SPACE { 5 };
   m_mainWindow = std::make_unique<Fl_Double_Window>(localX, localY, 3 * BUTTON_WIDTH + 2 * SPACE,
                  BUTTON_HEIGH, "Clikor");
   m_mainWindow->callback(mainWindowCb, this);
-  auto recordButton = std::make_unique<Fl_Button>(0, 0, BUTTON_WIDTH, BUTTON_HEIGH, "Record");
+  auto recordButton = std::make_unique<Fl_Button>(0, 0, BUTTON_WIDTH, BUTTON_HEIGH, RECORD_BUTTON_LABEL);
   recordButton->callback(recordButtonCb, this);
   auto stopButton = std::make_unique<Fl_Button>(recordButton->x() + SPACE + BUTTON_WIDTH,
-                    recordButton->y(), BUTTON_WIDTH, BUTTON_HEIGH, "Stop");
+                    recordButton->y(), BUTTON_WIDTH, BUTTON_HEIGH, STOP_BUTTON_LABEL);
   stopButton->callback(stopButtonCb, this);
   stopButton->deactivate();
   auto playButton = std::make_unique<Fl_Button>(stopButton->x() + SPACE + BUTTON_WIDTH,
-                    recordButton->y(), BUTTON_WIDTH, BUTTON_HEIGH, "Play");
+                    recordButton->y(), BUTTON_WIDTH, BUTTON_HEIGH, PLAY_BUTTON_LABEL);
   playButton->callback(playButtonCb, this);
   playButton->deactivate();
   m_mainWindow->end();
