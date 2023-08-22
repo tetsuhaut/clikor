@@ -1,5 +1,6 @@
 module;
 
+#include <format>
 #include <Windows.h>
 #include <stdio.h>
 
@@ -63,29 +64,15 @@ int os::MouseEventListener::Messsages() {
 }
 
 LRESULT CALLBACK os::MyMouseCallback(int nCode, WPARAM wParam, LPARAM lParam) {
-  MSLLHOOKSTRUCT* pMouseStruct = (MSLLHOOKSTRUCT*)lParam; // WH_MOUSE_LL struct
-  /*
-  nCode, this parameters will determine how to process a message
-  This callback in this case only have information when it is 0 (HC_ACTION): wParam and lParam contain info
-
-  wParam is about WINDOWS MESSAGE, in this case MOUSE messages.
-  lParam is information contained in the structure MSLLHOOKSTRUCT
-  */
-
-  // we have information in wParam/lParam ? If yes, let's check it:
   if (nCode == 0) {
-    // Mouse struct contain information?
-    // if (pMouseStruct != NULL)
-    // {
-    //  printf_s("Mouse Coordinates: x = %i | y = %i \n", pMouseStruct->pt.x, pMouseStruct->pt.y);
-    // }
+    auto* pMouseStruct = (MSLLHOOKSTRUCT*)lParam; // WH_MOUSE_LL struct
     switch (wParam) {
       case WM_LBUTTONDOWN: {
-        printf_s("LEFT CLICK DOWN\n");
+        printf_s("%s", std::format("LEFT CLICK DOWN x={} y={}\n", pMouseStruct->pt.x, pMouseStruct->pt.y).c_str());
       } break;
 
       case WM_LBUTTONUP: {
-        printf_s("LEFT CLICK UP\n");
+        printf_s("%s", std::format("LEFT CLICK UP x={} y={}\n", pMouseStruct->pt.x, pMouseStruct->pt.y).c_str());
       } break;
     }
   }
