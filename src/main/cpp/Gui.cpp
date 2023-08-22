@@ -40,7 +40,7 @@ import system;
 export namespace gui {
 class [[nodiscard]] MainWindow final {
 private:
-  Preferences m_preferences; 
+  Preferences m_preferences;
   std::unique_ptr<Fl_Double_Window> m_mainWindow;
 public:
   MainWindow();
@@ -79,6 +79,7 @@ Fl_Widget* getButton(Fl_Widget* button, std::string_view label) {
       return pGroup->child(i);
     }
   }
+
   auto errMsg { std::format("couldn't find the '{}' button", label) };
   assert(false && errMsg.c_str());
   return nullptr;
@@ -125,7 +126,8 @@ void gui::MainWindow::exit() {
   m_mainWindow = std::make_unique<Fl_Double_Window>(localX, localY, 3 * BUTTON_WIDTH + 2 * SPACE,
                  BUTTON_HEIGH, "Clikor");
   m_mainWindow->callback(mainWindowCb, this);
-  auto recordButton = std::make_unique<Fl_Button>(0, 0, BUTTON_WIDTH, BUTTON_HEIGH, RECORD_BUTTON_LABEL);
+  auto recordButton = std::make_unique<Fl_Button>(0, 0, BUTTON_WIDTH, BUTTON_HEIGH,
+                      RECORD_BUTTON_LABEL);
   recordButton->callback(recordButtonCb, this);
   auto stopButton = std::make_unique<Fl_Button>(recordButton->x() + SPACE + BUTTON_WIDTH,
                     recordButton->y(), BUTTON_WIDTH, BUTTON_HEIGH, STOP_BUTTON_LABEL);
