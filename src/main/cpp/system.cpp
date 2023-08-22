@@ -8,23 +8,15 @@ export module system;
 export namespace os {
   LRESULT CALLBACK MyMouseCallback(int nCode, WPARAM wParam, LPARAM lParam);
 
-  class MouseEventListener {
+  class [[nodiscard]] MouseEventListener final {
   private:
-    HHOOK mouseHook { nullptr }; // handle to the mouse hook
-    HHOOK windowHook { nullptr }; // handle to the window hook
-    MSG msg {}; // struct with information about all messages in our queue
+    HHOOK m_mouseHook; // handle to the mouse hook
+    MSG m_msg; // struct with information about all messages in our queue
+    
     friend LRESULT CALLBACK MyMouseCallback(int nCode, WPARAM wParam, LPARAM lParam);
   public:
-    static MouseEventListener& Instance() {
-      static MouseEventListener myHook;
-      return myHook;
-    }
-
-    // function to install our mouseHook
-    void startListening();
-
-    // function to uninstall our mouseHook
-    void stopListening();
+    MouseEventListener();
+    ~MouseEventListener();
 
     // function to "deal" with our messages
     int Messsages();
@@ -33,8 +25,10 @@ export namespace os {
 
 module : private;
 
-void os::MouseEventListener::startListening() {
-    /*
+os::MouseEventListener::MouseEventListener()
+  : m_mouseHook(nullptr),
+  m_msg() {
+  /*
     SetWindowHookEx(
     WM_MOUSE_LL = mouse low level mouseHook type,
     MyMouseCallback = our callback function that will deal with system messages about mouse
@@ -43,29 +37,28 @@ void os::MouseEventListener::startListening() {
     c++ note: we can check the return SetWindowsHookEx like this because:
     If it return NULL, a NULL value is 0 and 0 is false.
     */
-    if (nullptr == (mouseHook = SetWindowsHookEx(WH_MOUSE_LL, MyMouseCallback, NULL, 0))) {
+    if (nullptr == (m_mouseHook = SetWindowsHookEx(WH_MOUSE_LL, MyMouseCallback, NULL, 0))) {
         printf_s("Error: %lu \n", GetLastError());
     }
 }
 
-// function to uninstall our mouseHook
-void os::MouseEventListener::stopListening() {
-    UnhookWindowsHookEx(mouseHook);
+os::MouseEventListener::~MouseEventListener() {
+  UnhookWindowsHookEx(m_mouseHook);
 }
 
 // function to "deal" with our messages
 int os::MouseEventListener::Messsages()
 {
     // while we do not close our application
-    while (WM_QUIT != msg.message) {
-        if (GetMessage(&msg, NULL, 0, 0/*, PM_REMOVE*/)) {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
+    while (WM_QUIT != m_msg.message) {
+        if (GetMessage(&m_msg, NULL, 0, 0/*, PM_REMOVE*/)) {
+            TranslateMessage(&m_msg);
+            DispatchMessage(&m_msg);
         }
         Sleep(1);
     }
-    stopListening(); // if we close, let's uninstall our mouseHook
-    return (int)msg.wParam; // return the messages
+    UnhookWindowsHookEx(m_mouseHook); // if we close, let's uninstall our mouseHook
+    return (int)m_msg.wParam; // return the messages
 }
 
 LRESULT CALLBACK os::MyMouseCallback(int nCode, WPARAM wParam, LPARAM lParam) {
@@ -102,5 +95,6 @@ LRESULT CALLBACK os::MyMouseCallback(int nCode, WPARAM wParam, LPARAM lParam) {
          MSDN: Calling CallNextHookEx is optional, but it is highly recommended;
          otherwise, other applications that have installed hooks will not receive mouseHook notifications and may behave incorrectly as a result.
     */
-    return CallNextHookEx(MouseEventListener::Instance().mouseHook, nCode, wParam, lParam);
+    HHOOK ignored { nullptr };
+    return CallNextHookEx(ignored, nCode, wParam, lParam);
 }

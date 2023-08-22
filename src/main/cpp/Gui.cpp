@@ -44,6 +44,7 @@ private:
   std::unique_ptr<Fl_Double_Window> m_mainWindow;
 public:
   MainWindow();
+  ~MainWindow();
   void exit();
   [[nodiscard]] int run();
 };
@@ -54,6 +55,9 @@ module : private;
 static constexpr auto STOP_BUTTON_LABEL = "Stop";
 static constexpr auto PLAY_BUTTON_LABEL = "Play";
 static constexpr auto RECORD_BUTTON_LABEL = "Record";
+static constexpr int BUTTON_WIDTH { 100 };
+static constexpr int BUTTON_HEIGH { 30 };
+static constexpr int SPACE { 5 };
 
 [[nodiscard]] gui::MainWindow* MAIN_WINDOW(void* self) {
   return static_cast<gui::MainWindow*>(self);
@@ -64,22 +68,6 @@ static void mainWindowCb(Fl_Widget*, void* mainWindow) {
   if (FL_SHORTCUT == Fl::event() && FL_Escape == Fl::event_key()) { return; }
 
   MAIN_WINDOW(mainWindow)->exit();
-}
-
-/**
- * @param event, can be XEvent on Linux, MSG on Windows, or NSEvent on OSX
- * @eturn non zero if the event was processed, else zero
- */
-int systemMouseEventsListener(void* event, void* mainWindow) {
-  const auto& systemEvent { *static_cast<MSG*>(event) };
-
-  if ((WM_LBUTTONDOWN == systemEvent.message) or (WM_RBUTTONDOWN == systemEvent.message)) {
-    systemEvent.pt.x;
-    systemEvent.pt.y;
-    return 1;
-  }
-
-  return 0;
 }
 
 Fl_Widget* getButton(Fl_Widget* button, std::string_view label) {
@@ -93,17 +81,20 @@ Fl_Widget* getButton(Fl_Widget* button, std::string_view label) {
   }
   auto errMsg { std::format("couldn't find the '{}' button", label) };
   assert(false && errMsg.c_str());
+  return nullptr;
 }
+
+std::unique_ptr<os::MouseEventListener> m_listener;
 
 static void recordButtonCb(Fl_Widget* recordButton, void* mainWindow) {
   // starts listening to clicks
-  //os::MouseEventListener::Instance().startListening();
+  m_listener = std::make_unique<os::MouseEventListener>();
   recordButton->deactivate();
   getButton(recordButton, STOP_BUTTON_LABEL)->activate();
 }
 
 static void stopButtonCb(Fl_Widget* stopButton, void* mainWindow) {
-  //os::MouseEventListener::Instance().stopListening();
+  m_listener.reset();
   getButton(stopButton, RECORD_BUTTON_LABEL)->activate();
   getButton(stopButton, PLAY_BUTTON_LABEL)->activate();
 }
@@ -123,10 +114,6 @@ void gui::MainWindow::exit() {
   /* hide all windows: this will terminate the MainWindow */
   while (Fl::first_window()) { Fl::first_window()->hide(); }
 }
-
-static constexpr int BUTTON_WIDTH { 100 };
-static constexpr int BUTTON_HEIGH { 30 };
-static constexpr int SPACE { 5 };
 
 //   0
 // 0 +---- x
@@ -156,4 +143,8 @@ static constexpr int SPACE { 5 };
 gui::MainWindow::MainWindow()
   : m_preferences(3 * BUTTON_WIDTH + 2 * SPACE, BUTTON_HEIGH) {
   // nothing to do
+}
+
+gui::MainWindow::~MainWindow() {
+  m_listener.reset();
 }
