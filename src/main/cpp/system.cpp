@@ -48,7 +48,8 @@ os::MouseEventListener::~MouseEventListener() {
 /**
  * @see https://learn.microsoft.com/en-us/windows/win32/winmsg/lowlevelmouseproc
  */
-LRESULT CALLBACK os::MouseEventListener::mouseCallback(int nCode, WPARAM event, LPARAM data) noexcept {
+LRESULT CALLBACK os::MouseEventListener::mouseCallback(int nCode, WPARAM event,
+    LPARAM data) noexcept {
   try {
     if (HC_ACTION == nCode) {
       const auto& mouseData { *reinterpret_cast<MSLLHOOKSTRUCT*>(data) };
