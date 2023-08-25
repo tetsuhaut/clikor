@@ -35,13 +35,21 @@ module;
 export module gui.MainWindow;
 
 import gui.Preferences;
-import system;
+import os;
 
 export namespace gui {
 class [[nodiscard]] MainWindow final {
 private:
   Preferences m_preferences;
   std::unique_ptr<Fl_Double_Window> m_mainWindow;
+  std::unique_ptr<Fl_Button> m_recordButton;
+  std::unique_ptr<Fl_Button> m_stopButton;
+  std::unique_ptr<Fl_Button> m_playButton;
+  std::unique_ptr<os::MouseEventListener> m_meListener;
+  void mainWindowCb();
+  void recordButtonCb();
+  void stopButtonCb();
+  void playButtonCb();
 public:
   MainWindow();
   ~MainWindow();
@@ -59,57 +67,49 @@ static constexpr int BUTTON_WIDTH { 100 };
 static constexpr int BUTTON_HEIGH { 30 };
 static constexpr int SPACE { 5 };
 
-[[nodiscard]] gui::MainWindow* MAIN_WINDOW(void* self) {
+[[nodiscard]] constexpr gui::MainWindow* MAIN_WINDOW(void* self) {
   return static_cast<gui::MainWindow*>(self);
 }
 
-static void mainWindowCb(Fl_Widget*, void* mainWindow) {
+void gui::MainWindow::mainWindowCb() {
   // we dont't want the Esc key to close the program
   if (FL_SHORTCUT == Fl::event() && FL_Escape == Fl::event_key()) { return; }
 
-  MAIN_WINDOW(mainWindow)->exit();
+  exit();
 }
 
-Fl_Widget* getButton(Fl_Widget* button, std::string_view label) {
-  auto* pGroup { button->parent() };
-  const auto nbChildren { pGroup->children() };
-
-  for (auto i = 0; i < nbChildren; ++i) {
-    if (label == pGroup->child(i)->label()) {
-      return pGroup->child(i);
-    }
-  }
-
-  auto errMsg { std::format("couldn't find the '{}' button", label) };
-  assert(false && errMsg.c_str());
-  return nullptr;
-}
-
-std::unique_ptr<os::MouseEventListener> m_listener;
-
-static void recordButtonCb(Fl_Widget* recordButton, void* mainWindow) {
+void gui::MainWindow::recordButtonCb() {
   // starts listening to clicks
-  m_listener = std::make_unique<os::MouseEventListener>();
-  recordButton->deactivate();
-  getButton(recordButton, STOP_BUTTON_LABEL)->activate();
+  m_meListener = std::make_unique<os::MouseEventListener>();
+  m_recordButton->deactivate();
+  m_stopButton->activate();
+  m_playButton->deactivate();
 }
 
-static void stopButtonCb(Fl_Widget* stopButton, void* mainWindow) {
-  m_listener.reset();
-  getButton(stopButton, RECORD_BUTTON_LABEL)->activate();
-  getButton(stopButton, PLAY_BUTTON_LABEL)->activate();
+void gui::MainWindow::stopButtonCb() {
+  m_meListener.reset();
+  m_recordButton->activate();
+  m_playButton->activate();
 }
 
-static void playButtonCb(Fl_Widget* playButton, void* mainWindow) {
-  //SL::Input_Lite::
-  getButton(playButton, RECORD_BUTTON_LABEL)->deactivate();
+void gui::MainWindow::playButtonCb() {
+  m_recordButton->deactivate();
+  m_stopButton->activate();
+  auto mouseEvents { os::MouseEventListener::getEvents() };
+  mouseEvents.pop_back(); // remove the last click (on the stop button)
+
+  for (const auto& mouseEvent : mouseEvents) {
+    const auto buttonPressed { os::Event::leftButtonDown == mouseEvent.event };
+    SL::Input_Lite::SendInput(SL::Input_Lite::MousePositionAbsoluteEvent { .X = mouseEvent.x, .Y = mouseEvent.y });
+    SL::Input_Lite::SendInput(SL::Input_Lite::MouseButtonEvent { .Pressed = buttonPressed, .Button = SL::Input_Lite::MouseButtons::LEFT });
+  }
 }
 
 void gui::MainWindow::exit() {
   /* remember the windows position when closing them */
   if (m_mainWindow) {
-    std::array xywh {m_mainWindow->x(), m_mainWindow->y(), m_mainWindow->w(), m_mainWindow->h()};
-    m_preferences.saveSizeAndPosition(xywh);
+    m_preferences.saveSizeAndPosition(m_mainWindow->x(), m_mainWindow->y(), m_mainWindow->w(),
+                                      m_mainWindow->h());
   }
 
   /* hide all windows: this will terminate the MainWindow */
@@ -125,18 +125,18 @@ void gui::MainWindow::exit() {
   const auto [localX, localY] { m_preferences.getMainWindowXY() };
   m_mainWindow = std::make_unique<Fl_Double_Window>(localX, localY, 3 * BUTTON_WIDTH + 2 * SPACE,
                  BUTTON_HEIGH, "Clikor");
-  m_mainWindow->callback(mainWindowCb, this);
-  auto recordButton = std::make_unique<Fl_Button>(0, 0, BUTTON_WIDTH, BUTTON_HEIGH,
-                      RECORD_BUTTON_LABEL);
-  recordButton->callback(recordButtonCb, this);
-  auto stopButton = std::make_unique<Fl_Button>(recordButton->x() + SPACE + BUTTON_WIDTH,
-                    recordButton->y(), BUTTON_WIDTH, BUTTON_HEIGH, STOP_BUTTON_LABEL);
-  stopButton->callback(stopButtonCb, this);
-  stopButton->deactivate();
-  auto playButton = std::make_unique<Fl_Button>(stopButton->x() + SPACE + BUTTON_WIDTH,
-                    recordButton->y(), BUTTON_WIDTH, BUTTON_HEIGH, PLAY_BUTTON_LABEL);
-  playButton->callback(playButtonCb, this);
-  playButton->deactivate();
+  m_mainWindow->callback([](Fl_Widget*, void* self) { MAIN_WINDOW(self)->mainWindowCb(); }, this);
+  m_recordButton = std::make_unique<Fl_Button>(0, 0, BUTTON_WIDTH, BUTTON_HEIGH,
+                   RECORD_BUTTON_LABEL);
+  m_recordButton->callback([](Fl_Widget*, void* self) { MAIN_WINDOW(self)->recordButtonCb(); }, this);
+  m_stopButton = std::make_unique<Fl_Button>(m_recordButton->x() + SPACE + BUTTON_WIDTH,
+                 m_recordButton->y(), BUTTON_WIDTH, BUTTON_HEIGH, STOP_BUTTON_LABEL);
+  m_stopButton->callback([](Fl_Widget*, void* self) { MAIN_WINDOW(self)->stopButtonCb(); }, this);
+  m_stopButton->deactivate();
+  m_playButton = std::make_unique<Fl_Button>(m_stopButton->x() + SPACE + BUTTON_WIDTH,
+                 m_recordButton->y(), BUTTON_WIDTH, BUTTON_HEIGH, PLAY_BUTTON_LABEL);
+  m_playButton->callback([](Fl_Widget*, void* self) { MAIN_WINDOW(self)->playButtonCb(); }, this);
+  m_playButton->deactivate();
   m_mainWindow->end();
   m_mainWindow->show();
   return Fl::run();
@@ -148,5 +148,5 @@ gui::MainWindow::MainWindow()
 }
 
 gui::MainWindow::~MainWindow() {
-  m_listener.reset();
+  m_meListener.reset();
 }

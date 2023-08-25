@@ -24,3 +24,7 @@ With FLTK it could be feasible following https://stackoverflow.com/questions/266
 
 Another idea is to use wxwidget which has a promising method [void wxWindow::CaptureMouse()](https://docs.wxwidgets.org/3.2/classwx_window.html#a5c72c6260a73ef77bb0b1f7ec85fcfef)
 I shall try this one after the Windows only way is implemented.
+
+# TODOs
+- when reaching the end of the click playback, reset the mouse at the position when the user originally clicked on the play button
+- try to implement the MouseEventListener in a more portable way (see above)

@@ -13,7 +13,6 @@ module;
 #  pragma warning(pop)
 #endif  // _MSC_VER
 
-#include <array>
 #include <cassert>
 #include <filesystem>
 #include <format>
@@ -50,7 +49,7 @@ public:
   void saveHistoryDir(const std::filesystem::path& dir);
   std::string getHandHistoryDir() const;
   [[nodiscard]] std::pair<int, int> getMainWindowXY() const;
-  void saveSizeAndPosition(const std::array<int, 4>& xywh);
+  void saveSizeAndPosition(int x, int y, int w, int h);
   Preferences(int defaultWidth, int defaultHeight);
   Preferences(const Preferences&) = delete;
   ~Preferences() = default;
@@ -93,8 +92,7 @@ std::string getString(Fl_Preferences& fltkPreferences, std::string_view key) {
 
 } // namespace detail
 
-void gui::Preferences::saveSizeAndPosition(const std::array<int, 4>& xywh) {
-  const auto& [x, y, w, h] { xywh };
+void gui::Preferences::saveSizeAndPosition(int x, int y, int w, int h) {
   saveWindowX(x);
   saveWindowY(y);
   saveWindowWidth(w);
