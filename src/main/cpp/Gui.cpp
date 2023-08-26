@@ -98,13 +98,12 @@ void gui::MainWindow::playButtonCb() {
   // play the captured mouse clicks...
   auto mouseEvents { os::MouseEventListener::getEvents() };
   // excepted the last click on the stop button
-  mouseEvents.pop_back(); 
   mouseEvents.pop_back();
-
-  std::ranges::for_each(mouseEvents, [](const auto& mouseEvent) {
+  mouseEvents.pop_back();
+  std::ranges::for_each(mouseEvents, [](const auto & mouseEvent) {
     SL::Input_Lite::SendInput(SL::Input_Lite::MousePositionAbsoluteEvent { .X = mouseEvent.x, .Y = mouseEvent.y });
     SL::Input_Lite::SendInput(SL::Input_Lite::MouseButtonEvent { .Pressed = mouseEvent.isDown, .Button = mouseEvent.button });
-    });
+  });
   // reset the mouse on the play button
   SL::Input_Lite::SendInput(SL::Input_Lite::MousePositionAbsoluteEvent { .X = x, .Y = y });
   m_recordButton->activate();

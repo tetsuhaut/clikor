@@ -51,6 +51,7 @@ std::vector<os::MouseEvent> os::MouseEventListener::m_mouseEvents;
 os::MouseEventListener::MouseEventListener()
   : m_mouseHook(nullptr) {
   m_mouseEvents.clear();
+
   if (nullptr == (m_mouseHook = SetWindowsHookEx(WH_MOUSE_LL, mouseCallback, nullptr, 0))) {
     std::cerr << getLastErrorMessageFromOS() << '\n';
     std::cerr << std::format("Error code {} \n", GetLastError());
@@ -74,19 +75,24 @@ LRESULT CALLBACK os::MouseEventListener::mouseCallback(int nCode, WPARAM event,
         case WM_LBUTTONDOWN: {
           m_mouseEvents.push_back({.button = SL::Input_Lite::MouseButtons::LEFT, .isDown = true, .x = mouseData.pt.x, .y = mouseData.pt.y });
         } break;
+
         case WM_LBUTTONUP: {
           m_mouseEvents.push_back({ .button = SL::Input_Lite::MouseButtons::LEFT, .isDown = false, .x = mouseData.pt.x, .y = mouseData.pt.y });
         } break;
+
         case WM_MBUTTONDOWN: {
           m_mouseEvents.push_back({ .button = SL::Input_Lite::MouseButtons::MIDDLE, .isDown = true, .x = mouseData.pt.x, .y = mouseData.pt.y });
         } break;
-          case WM_MBUTTONUP: {
+
+        case WM_MBUTTONUP: {
           m_mouseEvents.push_back({ .button = SL::Input_Lite::MouseButtons::MIDDLE, .isDown = false, .x = mouseData.pt.x, .y = mouseData.pt.y });
         } break;
-          case WM_RBUTTONDOWN: {
+
+        case WM_RBUTTONDOWN: {
           m_mouseEvents.push_back({ .button = SL::Input_Lite::MouseButtons::RIGHT, .isDown = true, .x = mouseData.pt.x, .y = mouseData.pt.y });
         } break;
-          case WM_RBUTTONUP: {
+
+        case WM_RBUTTONUP: {
           m_mouseEvents.push_back({ .button = SL::Input_Lite::MouseButtons::RIGHT, .isDown = false, .x = mouseData.pt.x, .y = mouseData.pt.y });
         } break;
       }
