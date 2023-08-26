@@ -25,12 +25,8 @@ module;
 #endif  // _MSC_VER
 
 // as of 2023/08/20, gcc can't do 'import std'. See https://gcc.gnu.org/wiki/LibstdcxxTodo TODO: when it is possible, use it
-#include <cassert>
-#include <format>
-#include <memory>
-#include <string>
-#include <string_view>
-#include <tuple>
+#include <algorithm> // std::range::for_each
+#include <memory> // std::unique_ptr
 
 export module gui.MainWindow;
 
@@ -93,16 +89,25 @@ void gui::MainWindow::stopButtonCb() {
 }
 
 void gui::MainWindow::playButtonCb() {
+  // get the current mouse coordinates
+  const auto x { Fl::event_x_root() /* - Fl::event_x()*/};
+  const auto y { Fl::event_y_root() /* - Fl::event_y()*/};
+  // avoid problematic user actions
   m_recordButton->deactivate();
   m_stopButton->activate();
+  // play the captured mouse clicks...
   auto mouseEvents { os::MouseEventListener::getEvents() };
-  mouseEvents.pop_back(); // remove the last click (on the stop button)
+  // excepted the last click on the stop button
+  mouseEvents.pop_back(); 
+  mouseEvents.pop_back();
 
-  for (const auto& mouseEvent : mouseEvents) {
-    const auto buttonPressed { os::Event::leftButtonDown == mouseEvent.event };
+  std::ranges::for_each(mouseEvents, [](const auto& mouseEvent) {
     SL::Input_Lite::SendInput(SL::Input_Lite::MousePositionAbsoluteEvent { .X = mouseEvent.x, .Y = mouseEvent.y });
-    SL::Input_Lite::SendInput(SL::Input_Lite::MouseButtonEvent { .Pressed = buttonPressed, .Button = SL::Input_Lite::MouseButtons::LEFT });
-  }
+    SL::Input_Lite::SendInput(SL::Input_Lite::MouseButtonEvent { .Pressed = mouseEvent.isDown, .Button = mouseEvent.button });
+    });
+  // reset the mouse on the play button
+  SL::Input_Lite::SendInput(SL::Input_Lite::MousePositionAbsoluteEvent { .X = x, .Y = y });
+  m_recordButton->activate();
 }
 
 void gui::MainWindow::exit() {
@@ -122,9 +127,10 @@ void gui::MainWindow::exit() {
 //   |
 //   y
 [[nodiscard]] int gui::MainWindow::run() {
+  static_assert(0 != std::ssize(APP_NAME));
   const auto [localX, localY] { m_preferences.getMainWindowXY() };
   m_mainWindow = std::make_unique<Fl_Double_Window>(localX, localY, 3 * BUTTON_WIDTH + 2 * SPACE,
-                 BUTTON_HEIGH, "Clikor");
+                 BUTTON_HEIGH, APP_NAME);
   m_mainWindow->callback([](Fl_Widget*, void* self) { MAIN_WINDOW(self)->mainWindowCb(); }, this);
   m_recordButton = std::make_unique<Fl_Button>(0, 0, BUTTON_WIDTH, BUTTON_HEIGH,
                    RECORD_BUTTON_LABEL);

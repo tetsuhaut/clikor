@@ -1,5 +1,6 @@
 module;
 
+#include <Input_Lite.h> // SL::Input_Lite::MouseButtons
 #include <Windows.h>
 
 #include <format>
@@ -9,12 +10,9 @@ module;
 export module os;
 
 export namespace os {
-enum class /*[[nodiscard]]*/ Event : int {
-  leftButtonDown, leftButtonUp
-};
-
 struct [[nodiscard]] MouseEvent final {
-  Event event;
+  SL::Input_Lite::MouseButtons button;
+  bool isDown;
   long x;
   long y;
 };
@@ -52,6 +50,7 @@ std::vector<os::MouseEvent> os::MouseEventListener::m_mouseEvents;
  */
 os::MouseEventListener::MouseEventListener()
   : m_mouseHook(nullptr) {
+  m_mouseEvents.clear();
   if (nullptr == (m_mouseHook = SetWindowsHookEx(WH_MOUSE_LL, mouseCallback, nullptr, 0))) {
     std::cerr << getLastErrorMessageFromOS() << '\n';
     std::cerr << std::format("Error code {} \n", GetLastError());
@@ -73,13 +72,22 @@ LRESULT CALLBACK os::MouseEventListener::mouseCallback(int nCode, WPARAM event,
 
       switch (event) {
         case WM_LBUTTONDOWN: {
-          std::cout << std::format("LEFT CLICK DOWN x={} y={}\n", mouseData.pt.x, mouseData.pt.y);
-          m_mouseEvents.push_back({.event = Event::leftButtonDown, .x = mouseData.pt.x, .y = mouseData.pt.y });
+          m_mouseEvents.push_back({.button = SL::Input_Lite::MouseButtons::LEFT, .isDown = true, .x = mouseData.pt.x, .y = mouseData.pt.y });
         } break;
-
         case WM_LBUTTONUP: {
-          std::cout << std::format("LEFT CLICK UP x={} y={}\n", mouseData.pt.x, mouseData.pt.y);
-          m_mouseEvents.push_back({ .event = Event::leftButtonUp, .x = mouseData.pt.x, .y = mouseData.pt.y });
+          m_mouseEvents.push_back({ .button = SL::Input_Lite::MouseButtons::LEFT, .isDown = false, .x = mouseData.pt.x, .y = mouseData.pt.y });
+        } break;
+        case WM_MBUTTONDOWN: {
+          m_mouseEvents.push_back({ .button = SL::Input_Lite::MouseButtons::MIDDLE, .isDown = true, .x = mouseData.pt.x, .y = mouseData.pt.y });
+        } break;
+          case WM_MBUTTONUP: {
+          m_mouseEvents.push_back({ .button = SL::Input_Lite::MouseButtons::MIDDLE, .isDown = false, .x = mouseData.pt.x, .y = mouseData.pt.y });
+        } break;
+          case WM_RBUTTONDOWN: {
+          m_mouseEvents.push_back({ .button = SL::Input_Lite::MouseButtons::RIGHT, .isDown = true, .x = mouseData.pt.x, .y = mouseData.pt.y });
+        } break;
+          case WM_RBUTTONUP: {
+          m_mouseEvents.push_back({ .button = SL::Input_Lite::MouseButtons::RIGHT, .isDown = false, .x = mouseData.pt.x, .y = mouseData.pt.y });
         } break;
       }
     }
