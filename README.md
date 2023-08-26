@@ -26,5 +26,4 @@ Another idea is to use wxwidget which has a promising method [void wxWindow::Cap
 I shall try this one after the Windows only way is implemented.
 
 # TODOs
-- when reaching the end of the click playback, reset the mouse at the position when the user originally clicked on the play button
 - try to implement the MouseEventListener in a more portable way (see above)
