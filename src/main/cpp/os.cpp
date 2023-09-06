@@ -28,7 +28,7 @@ private:
 public:
   MouseEventListener();
   ~MouseEventListener();
-  [[nodiscard]] static constexpr std::vector<MouseEvent> getEvents() noexcept { return m_mouseEvents; };
+  [[nodiscard]] constexpr std::vector<MouseEvent> getEvents() noexcept { return m_mouseEvents; };
 }; // class MouseEventListener
 } // namespace os
 
@@ -74,6 +74,7 @@ LRESULT CALLBACK os::MouseEventListener::mouseCallback(int nCode, WPARAM event,
       switch (event) {
         case WM_LBUTTONDOWN: {
           m_mouseEvents.push_back({.button = SL::Input_Lite::MouseButtons::LEFT, .isDown = true, .x = mouseData.pt.x, .y = mouseData.pt.y });
+          std::cout << "x=" << mouseData.pt.x << "y=" << mouseData.pt.y << '\n';
         } break;
 
         case WM_LBUTTONUP: {

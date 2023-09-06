@@ -42,6 +42,7 @@ private:
   std::unique_ptr<Fl_Button> m_stopButton;
   std::unique_ptr<Fl_Button> m_playButton;
   std::unique_ptr<os::MouseEventListener> m_meListener;
+  std::vector<os::MouseEvent> m_mouseEvents;
   void mainWindowCb();
   void recordButtonCb();
   void stopButtonCb();
@@ -83,6 +84,10 @@ void gui::MainWindow::recordButtonCb() {
 }
 
 void gui::MainWindow::stopButtonCb() {
+  m_mouseEvents = m_meListener->getEvents();
+    // remove the last click on the stop button
+  m_mouseEvents.pop_back();
+  m_mouseEvents.pop_back();
   m_meListener.reset();
   m_recordButton->activate();
   m_playButton->activate();
@@ -90,17 +95,13 @@ void gui::MainWindow::stopButtonCb() {
 
 void gui::MainWindow::playButtonCb() {
   // get the current mouse coordinates
-  const auto x { Fl::event_x_root() /* - Fl::event_x()*/};
-  const auto y { Fl::event_y_root() /* - Fl::event_y()*/};
+  const auto x { Fl::event_x_root() };
+  const auto y { Fl::event_y_root() };
   // avoid problematic user actions
   m_recordButton->deactivate();
   m_stopButton->activate();
   // play the captured mouse clicks...
-  auto mouseEvents { os::MouseEventListener::getEvents() };
-  // excepted the last click on the stop button
-  mouseEvents.pop_back();
-  mouseEvents.pop_back();
-  std::ranges::for_each(mouseEvents, [](const auto & mouseEvent) {
+  std::ranges::for_each(m_mouseEvents, [](const auto & mouseEvent) {
     SL::Input_Lite::SendInput(SL::Input_Lite::MousePositionAbsoluteEvent { .X = mouseEvent.x, .Y = mouseEvent.y });
     SL::Input_Lite::SendInput(SL::Input_Lite::MouseButtonEvent { .Pressed = mouseEvent.isDown, .Button = mouseEvent.button });
   });

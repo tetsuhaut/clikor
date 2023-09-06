@@ -92,13 +92,25 @@ target_link_libraries(${PROJECT_NAME} PRIVATE ${FLTK_LIBRARIES})
 find_package(Microsoft.GSL CONFIG REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE Microsoft.GSL::GSL)
 
+include(FetchContent)
 ################################################################################
 # will use the input_lite library https://github.com/smasherprog/input_lite, so
 # configure the project for it.
 # need to have input_lite_DIR as an environment variable pointing to the dir
 # where the library has been installed
 ################################################################################
-find_library(INPUT_LITE_LIBRARY NAMES input_lite HINTS "$ENV{input_lite_DIR}/lib")
+FetchContent_Declare(
+  input_lite
+  GIT_REPOSITORY https://github.com/smasherprog/input_lite.git
+  GIT_TAG 3.0.0
+)
+FetchContent_GetProperties(input_lite)
+if(NOT input_lite_POPULATED)
+  FetchContent_Populate(input_lite)
+  set(BUILD_EXAMPLE OFF CACHE INTERNAL "disable building examples")
+  set(BUILD_SHARED_LIBS OFF CACHE INTERNAL "link statically")
+  add_subdirectory(${input_lite_SOURCE_DIR} ${input_lite_BINARY_DIR} EXCLUDE_FROM_ALL)
+endif()
 target_include_directories(${PROJECT_NAME} PRIVATE "$ENV{input_lite_DIR}/include")
 target_link_libraries(${PROJECT_NAME} PRIVATE ${INPUT_LITE_LIBRARY})
 
@@ -151,10 +163,44 @@ if(MSVC)
 # https://sourceforge.net/p/mingw-w64/mailman/mingw-w64-public/thread/575d13dd.430ac20a.33013.1aa0@mx.google.com/
 ################################################################################
 elseif(MINGW)
-   # -Werror=conversion breaks compilation because of Boost
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++2a -Wall -Wextra -Wpedantic -Werror=unused-function -pedantic-errors -Wvla -Wextra-semi -Wnull-dereference -Wswitch-enum -Wno-deprecated -fno-elide-type -Wduplicated-cond -Wduplicated-branches -Wsuggest-override -Wshadow -Wnon-virtual-dtor -Wold-style-cast -Wcast-align -Wunused -Woverloaded-virtual -pedantic -Wconversion -Wsign-conversion -Wmisleading-indentation -Wduplicated-cond -Wduplicated-branches -Wlogical-op -Wnull-dereference -Wuseless-cast -Wdouble-promotion -Wformat=2 -Weffc++")
+  # link statically
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static")
   target_link_libraries(${PROJECT_NAME} PRIVATE "-lpsapi -pthread")
-  #target_link_libraries(${PROJECT_NAME} PRIVATE -mwindows)
   add_definitions(-DWIN32)
+  # compile in pure c++, with max possible warning level
+  target_compile_options(${PROJECT_NAME} PRIVATE
+                                                 -std=c++2a
+                                                 -Wall
+                                                 -Wextra
+                                                 -Wpedantic
+                                                 -Werror=unused-function
+                                                 -pedantic-errors
+                                                 -Wvla
+                                                 -Wextra-semi
+                                                 -Wnull-dereference
+                                                 -Wswitch-enum
+                                                 -Wno-deprecated
+                                                 -fno-elide-type
+                                                 -Wduplicated-cond
+                                                 -Wduplicated-branches
+                                                 -Wsuggest-override
+                                                 -Wshadow
+                                                 -Wnon-virtual-dtor
+                                                 -Wold-style-cast
+                                                 -Wcast-align
+                                                 -Wunused
+                                                 -Woverloaded-virtual
+                                                 -pedantic -Wconversion
+                                                 -Wsign-conversion
+                                                 -Wmisleading-indentation
+                                                 -Wduplicated-cond
+                                                 -Wduplicated-branches
+                                                 -Wlogical-op
+                                                 -Wnull-dereference
+                                                 -Wuseless-cast
+                                                 -Wdouble-promotion
+                                                 -Wformat=2
+                                                 -Weffc++
+                                                 -Werror=conversion
+  )
 endif(MSVC)

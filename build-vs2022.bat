@@ -26,7 +26,7 @@ PUSHD build
 ECHO Generate the Visual Studio 2022 compilation configuration files in the 'build' directory...
 REM See https://cmake.org/cmake/help/latest/generator/Visual%20Studio%2017%202022.html
 ECHO:
-cmake -G "Visual Studio 17 2022" -A x64 -T host=x64 %~dp0
+cmake -G "Visual Studio 17 2022" -A x64 -T host=x64 -DFETCHCONTENT_BASE_DIR=..\..\cmake_cache %~dp0
 POPD
 
 ECHO:
