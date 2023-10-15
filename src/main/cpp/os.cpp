@@ -22,8 +22,8 @@ struct [[nodiscard]] MouseEvent final {
  */
 class [[nodiscard]] MouseEventListener final {
 private:
-  HHOOK m_mouseHook; // handle to the mouse hook
-  static LRESULT CALLBACK mouseCallback(int nCode, WPARAM wParam, LPARAM lParam) noexcept;
+  HHOOK m_mouseHookHandle;
+  static LRESULT CALLBACK m_mouseCallback(int nCode, WPARAM wParam, LPARAM lParam) noexcept;
   static std::vector<MouseEvent> m_mouseEvents;
 public:
   MouseEventListener();
@@ -49,23 +49,30 @@ std::vector<os::MouseEvent> os::MouseEventListener::m_mouseEvents;
  * @see https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setwindowshookexa
  */
 os::MouseEventListener::MouseEventListener()
-  : m_mouseHook(nullptr) {
+  : m_mouseHookHandle(SetWindowsHookEx(WH_MOUSE_LL, m_mouseCallback, nullptr, 0)) {
   m_mouseEvents.clear();
 
-  if (nullptr == (m_mouseHook = SetWindowsHookEx(WH_MOUSE_LL, mouseCallback, nullptr, 0))) {
+  if (nullptr == m_mouseHookHandle) {
     std::cerr << getLastErrorMessageFromOS() << '\n';
     std::cerr << std::format("Error code {} \n", GetLastError());
   }
 }
 
 os::MouseEventListener::~MouseEventListener() {
-  UnhookWindowsHookEx(m_mouseHook);
+  // can't throw from a destructor
+  try {
+    UnhookWindowsHookEx(m_mouseHookHandle);
+  }
+  catch (...) {
+    std::cerr << "Error in ~MouseEventListener()!!!\n";
+    std::cerr << getLastErrorMessageFromOS() << '\n';
+  }
 }
 
 /**
  * @see https://learn.microsoft.com/en-us/windows/win32/winmsg/lowlevelmouseproc
  */
-LRESULT CALLBACK os::MouseEventListener::mouseCallback(int nCode, WPARAM event,
+LRESULT CALLBACK os::MouseEventListener::m_mouseCallback(int nCode, WPARAM event,
     LPARAM data) noexcept {
   try {
     if (HC_ACTION == nCode) {

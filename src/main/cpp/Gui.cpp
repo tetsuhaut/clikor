@@ -41,7 +41,7 @@ private:
   std::unique_ptr<Fl_Button> m_recordButton;
   std::unique_ptr<Fl_Button> m_stopButton;
   std::unique_ptr<Fl_Button> m_playButton;
-  std::unique_ptr<os::MouseEventListener> m_meListener;
+  std::unique_ptr<os::MouseEventListener> m_mouseEventListener;
   void mainWindowCb();
   void recordButtonCb();
   void stopButtonCb();
@@ -76,14 +76,14 @@ void gui::MainWindow::mainWindowCb() {
 
 void gui::MainWindow::recordButtonCb() {
   // starts listening to clicks
-  m_meListener = std::make_unique<os::MouseEventListener>();
+  m_mouseEventListener = std::make_unique<os::MouseEventListener>();
   m_recordButton->deactivate();
   m_stopButton->activate();
   m_playButton->deactivate();
 }
 
 void gui::MainWindow::stopButtonCb() {
-  m_meListener.reset();
+  m_mouseEventListener.reset();
   m_recordButton->activate();
   m_playButton->activate();
 }
@@ -120,13 +120,22 @@ void gui::MainWindow::exit() {
   while (Fl::first_window()) { Fl::first_window()->hide(); }
 }
 
+gui::MainWindow::MainWindow()
+  : m_preferences(3 * BUTTON_WIDTH + 2 * SPACE, BUTTON_HEIGH) {
+  // nothing to do
+}
+
+gui::MainWindow::~MainWindow() {
+  m_mouseEventListener.reset();
+}
+
 //   0
 // 0 +---- x
 //   |
 //   |
 //   y
 [[nodiscard]] int gui::MainWindow::run() {
-  static_assert(0 != std::ssize(APP_NAME));
+  static_assert(0 != std::ssize(APP_NAME), "The APP_NAME macro is undefined!!!");
   const auto [localX, localY] { m_preferences.getMainWindowXY() };
   m_mainWindow = std::make_unique<Fl_Double_Window>(localX, localY, 3 * BUTTON_WIDTH + 2 * SPACE,
                  BUTTON_HEIGH, APP_NAME);
@@ -145,13 +154,4 @@ void gui::MainWindow::exit() {
   m_mainWindow->end();
   m_mainWindow->show();
   return Fl::run();
-}
-
-gui::MainWindow::MainWindow()
-  : m_preferences(3 * BUTTON_WIDTH + 2 * SPACE, BUTTON_HEIGH) {
-  // nothing to do
-}
-
-gui::MainWindow::~MainWindow() {
-  m_meListener.reset();
 }
